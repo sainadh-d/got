@@ -15,11 +15,13 @@ func main() {
 	arg.MustParse(&args)
 	switch {
 	case args.CatFile != nil:
-		cat_file(args)
+		catFile(args)
 	case args.Test != nil:
 		test(args)
 	case args.Init != nil:
 		initialize(args)
+	case args.HashObject != nil:
+		hashObject(args)
 		/*
 		   case "add":
 		       add(args)
@@ -31,8 +33,6 @@ func main() {
 		       checkout(args)
 		   case "commit":
 		       commit(args)
-		   case "hash-object":
-		       hash_object(args)
 		   case "log":
 		       log(args)
 		   case "ls-files":
@@ -190,7 +190,7 @@ Initial commit`
 	fmt.Println("Successfully read the content to file")
 }
 
-func cat_file(args types.Args) {
+func catFile(args types.Args) {
 	repoRoot, err := utils.FindRepoRoot(".")
 	if err != nil {
 		fmt.Println(err)
@@ -216,5 +216,41 @@ func cat_file(args types.Args) {
 	if args.CatFile.PrettyPrint {
 		fmt.Println(string(obj.Data))
 	}
+}
 
+func hashObject(args types.Args) {
+	repoRoot, err := utils.FindRepoRoot(".")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	repo := createRepository(repoRoot)
+
+	// Read the file
+	content, err := os.ReadFile(args.HashObject.FileName)
+	if err != nil {
+		fmt.Println("fatal:", err)
+		return
+	}
+
+	// Create the Object, default type is blob
+	obj := types.GitObject{
+		Type: "blob",
+		Size: len(content),
+		Data: content,
+	}
+
+	var hash string
+	if args.HashObject.Write {
+		hash, err = repo.WriteObject(obj)
+	} else {
+		hash, _, err = repo.HashObject(obj)
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(hash)
 }

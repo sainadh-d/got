@@ -74,7 +74,7 @@ func (r Repository) ReadObject(hash string) (GitObject, error) {
 	}, nil
 }
 
-func (r Repository) WriteObject(g GitObject) (string, error) {
+func (r Repository) HashObject(g GitObject) (string, []byte, error) {
 	content := g.Data
 
 	// Create the header for the blob object
@@ -94,9 +94,15 @@ func (r Repository) WriteObject(g GitObject) (string, error) {
 	_, err := zlibWriter.Write(data)
 	if err != nil {
 		fmt.Println("Error compressing data:", err)
-		return "", err
+		return "", nil, err
 	}
 	zlibWriter.Close()
+
+	return hash, compressedBuffer.Bytes(), nil
+}
+
+func (r Repository) WriteObject(g GitObject) (string, error) {
+	hash, compressedBuffer, err := r.HashObject(g)
 
 	// Write compressed data to a file
 	parent := fmt.Sprintf("%s/%s/%s", r.Gitdir, "objects", hash[0:2])
@@ -107,7 +113,7 @@ func (r Repository) WriteObject(g GitObject) (string, error) {
 	}
 
 	outputFilePath := fmt.Sprintf("%s/%s/%s/%s", r.Gitdir, "objects", hash[0:2], hash[2:])
-	err = os.WriteFile(outputFilePath, compressedBuffer.Bytes(), 0644)
+	err = os.WriteFile(outputFilePath, compressedBuffer, 0644)
 	if err != nil {
 		fmt.Println("Error writing compressed data to file:", err)
 		return "", err
