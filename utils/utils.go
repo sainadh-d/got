@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func findRepoRoot(path string) (string, error) {
+func FindRepoRoot(path string) (string, error) {
 	curr, err := os.Getwd()
 	if err != nil {
 		fmt.Println("Failed to get current directory", err)
@@ -27,5 +27,5 @@ func findRepoRoot(path string) (string, error) {
 		return "", errors.New("no .git directory found")
 	}
 
-	return findRepoRoot(parent)
+	return FindRepoRoot(parent)
 }
