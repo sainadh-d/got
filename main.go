@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/alexflint/go-arg"
-	"github.com/bigkevmcd/go-configparser"
 )
 
 func main() {
@@ -70,11 +69,10 @@ func add(args types.Args) {
 }
 
 func initialize(args types.Args) {
-
 	worktree := "."
-	// if len(args.Input) == 1 {
-	// 	worktree = args.Input[0]
-	// }
+	if args.Init.WorkTree != "" {
+		worktree = args.Init.WorkTree
+	}
 
 	// Check if worktree exists and its a directory
 	d, err := os.Stat(worktree)
@@ -89,61 +87,7 @@ func initialize(args types.Args) {
 		return
 	}
 
-	repo := createRepository(worktree)
-
-	// Create branches, objects, refs/tags, refs/heads directories
-	if err = os.MkdirAll(fmt.Sprintf("%s/branches", repo.Gitdir), 0755); err != nil {
-		fmt.Println("Failed to create branches", err)
-	}
-
-	if err = os.MkdirAll(fmt.Sprintf("%s/objects", repo.Gitdir), 0755); err != nil {
-		fmt.Println("Failed to create objects", err)
-	}
-
-	if err = os.MkdirAll(fmt.Sprintf("%s/refs/tags", repo.Gitdir), 0755); err != nil {
-		fmt.Println("Failed to create refs/tags", err)
-	}
-
-	if err = os.MkdirAll(fmt.Sprintf("%s/refs/heads", repo.Gitdir), 0755); err != nil {
-		fmt.Println("Failed to create refs/heads", err)
-	}
-
-	// Create .git/description
-	if f, err := os.Create(fmt.Sprintf("%s/description", repo.Gitdir)); err != nil {
-		fmt.Println("Failed to create .git/description", err)
-	} else {
-		f.WriteString("Unnamed repository; edit this file 'description' to name the repository.\n")
-		defer f.Close()
-	}
-
-	// Create .git/HEAD
-	if f, err := os.Create(fmt.Sprintf("%s/HEAD", repo.Gitdir)); err != nil {
-		fmt.Println("Failed to create .git/HEAD", err)
-	} else {
-		f.WriteString("ref: refs/heads/master\n")
-		defer f.Close()
-	}
-
-	// Create .git/config
-	gitconfig := fmt.Sprintf("%s/config", repo.Gitdir)
-	if f, err := os.Create(gitconfig); err != nil {
-		fmt.Println("Failed to create .git/config", err)
-	} else {
-		// Write default config
-		p, err := configparser.NewConfigParserFromFile(gitconfig)
-		if err != nil {
-			fmt.Println("Failed to parse .git/config file", err)
-		}
-
-		// Set some basic config
-		_ = p.AddSection("core")
-		_ = p.Set("core", "repositoryformatversion", "0")
-		_ = p.Set("core", "filemode", "false")
-		_ = p.Set("core", "bare", "false")
-
-		p.SaveWithDelimiter(gitconfig, "=")
-		defer f.Close()
-	}
+	createRepository(worktree).Initialize()
 }
 
 func test(args types.Args) {

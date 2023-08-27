@@ -9,11 +9,81 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/bigkevmcd/go-configparser"
 )
 
 type Repository struct {
 	Worktree string
 	Gitdir   string
+}
+
+func (r Repository) Initialize() error {
+	// TODO: Rollback (cleanup directories and files if anystep fails)
+
+	// Create branches, objects, refs/tags, refs/heads directories
+	var err error
+	if err = os.MkdirAll(fmt.Sprintf("%s/branches", r.Gitdir), 0755); err != nil {
+		fmt.Println("Failed to create branches", err)
+		return err
+	}
+
+	if err = os.MkdirAll(fmt.Sprintf("%s/objects", r.Gitdir), 0755); err != nil {
+		fmt.Println("Failed to create objects", err)
+		return err
+	}
+
+	if err = os.MkdirAll(fmt.Sprintf("%s/refs/tags", r.Gitdir), 0755); err != nil {
+		fmt.Println("Failed to create refs/tags", err)
+		return err
+	}
+
+	if err = os.MkdirAll(fmt.Sprintf("%s/refs/heads", r.Gitdir), 0755); err != nil {
+		fmt.Println("Failed to create refs/heads", err)
+		return err
+	}
+
+	// Create .git/description
+	if f, err := os.Create(fmt.Sprintf("%s/description", r.Gitdir)); err != nil {
+		fmt.Println("Failed to create .git/description", err)
+		return err
+	} else {
+		f.WriteString("Unnamed repository; edit this file 'description' to name the repository.\n")
+		defer f.Close()
+	}
+
+	// Create .git/HEAD
+	if f, err := os.Create(fmt.Sprintf("%s/HEAD", r.Gitdir)); err != nil {
+		fmt.Println("Failed to create .git/HEAD", err)
+		return err
+	} else {
+		f.WriteString("ref: refs/heads/master\n")
+		defer f.Close()
+	}
+
+	// Create .git/config
+	gitconfig := fmt.Sprintf("%s/config", r.Gitdir)
+	if f, err := os.Create(gitconfig); err != nil {
+		fmt.Println("Failed to create .git/config", err)
+		return err
+	} else {
+		// Write default config
+		p, err := configparser.NewConfigParserFromFile(gitconfig)
+		if err != nil {
+			fmt.Println("Failed to parse .git/config file", err)
+			return err
+		}
+
+		// Set some basic config
+		_ = p.AddSection("core")
+		_ = p.Set("core", "repositoryformatversion", "0")
+		_ = p.Set("core", "filemode", "false")
+		_ = p.Set("core", "bare", "false")
+
+		p.SaveWithDelimiter(gitconfig, "=")
+		defer f.Close()
+	}
+	return nil
 }
 
 func (r Repository) ReadObject(hash string) (GitObject, error) {
