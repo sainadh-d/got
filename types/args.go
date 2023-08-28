@@ -19,6 +19,7 @@ type CatFileCmd struct {
 type HashObjectCmd struct {
 	FileName string `arg:"positional"`
 	Write    bool   `arg:"-w"`
+	Type     string `arg:"-t"`
 }
 
 type Test struct {

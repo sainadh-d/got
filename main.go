@@ -178,9 +178,14 @@ func hashObject(args types.Args) {
 		return
 	}
 
+	objectType := "blob"
+	if args.HashObject.Type != "" {
+		objectType = args.HashObject.Type
+	}
+
 	// Create the Object, default type is blob
 	obj := types.GitObject{
-		Type: "blob",
+		Type: objectType,
 		Size: len(content),
 		Data: content,
 	}
